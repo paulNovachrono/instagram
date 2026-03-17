@@ -2,7 +2,8 @@ const express = require("express");
 const authRouter = require("./router/auth.route");
 const cookieParser = require("cookie-parser");
 const postRouter = require("./router/post.route");
-
+const dotenv = require("dotenv");
+dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cookieParser());

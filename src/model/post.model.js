@@ -17,3 +17,5 @@ const postSchema = new mongoose.Schema({
 });
 
 const postModel = mongoose.model("insta-posts", postSchema);
+
+module.exports = postModel;
