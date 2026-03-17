@@ -11,28 +11,6 @@ const imageKit = new ImageKit({
 });
 
 const createPostController = async (req, res) => {
-  //console.log(req.body, req.file);
-
-  //   upload the file in the imagekit
-  //   const file = await imageKit.files.upload({
-  //     file: await toFile(Buffer.from("buffer"), "file"),
-  //     fileName: req.file.originalname,
-  //   });
-
-  //   res.send(file);
-
-  //   try {
-  //     const uploadedFile = await imageKit.files.upload({
-  //       file: await toFile(req.file.buffer, req.file.originalname), // ✅ FIX
-  //       fileName: req.file.originalname,
-  //     });
-
-  //     res.send(uploadedFile);
-  //   } catch (error) {
-  //     console.log(error);
-  //     res.status(500).send("Upload failed");
-  //   }
-
   try {
     const token = req.cookies.token;
 
@@ -69,4 +47,76 @@ const createPostController = async (req, res) => {
   }
 };
 
-module.exports = { createPostController };
+const getVerifiedUserPostController = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) return res.status(401).json("Unauthorised access");
+
+    let verifiedUser;
+
+    try {
+      verifiedUser = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      console.log(error.message);
+      return res.status(401).json({ message: "Unauthorised Request" });
+    }
+
+    const verifiedUserId = verifiedUser.id;
+
+    try {
+      const posts = await postModel.find({ user: verifiedUserId });
+
+      res.status(200).json({ message: "Post Fetched Successfully", posts });
+    } catch (error) {
+      console.log(error.message);
+      res.status(400).json({ message: "Failed to fetching posts" });
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+const getSpecificPostDetailsProtectedController = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) return res.status(401).json({ message: "Unauthorized access" });
+
+    let verifyUser;
+
+    try {
+      verifyUser = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const postId = req.params.id;
+
+    const post = await postModel.findById(postId);
+
+    if (!post) return res.status(404).json({ message: "Post Not Found" });
+
+    const matchedUserIdWithPost = post.user.toString() === verifyUser.id;
+
+    if (!matchedUserIdWithPost)
+      return res.status(403).json({ message: "Forbidden! You're not allowed" });
+
+    return res
+      .status(200)
+      .json({ message: "Post details Fetched Successfully", post });
+  } catch (error) {
+    console.log(error.message);
+
+    return res.status(500).json({
+      message: "Something went wrong",
+    });
+  }
+};
+
+module.exports = {
+  createPostController,
+  getVerifiedUserPostController,
+  getSpecificPostDetailsProtectedController,
+};
