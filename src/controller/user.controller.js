@@ -41,8 +41,47 @@ const followDetailsController = async (req, res) => {
     });
   } catch (error) {
     console.log(error.message);
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Failed To Follow User" });
   }
 };
 
-module.exports = { followDetailsController };
+const unFollowDetailsController = async (req, res) => {
+  try {
+    const loggedInUserName = req.user.userName;
+    const unfollowUserName = req.params.username;
+
+    // prevent self-unfollow (optional but clean)
+    if (loggedInUserName === unfollowUserName) {
+      return res.status(400).json({ message: "You cannot unfollow yourself" });
+    }
+
+    // check if user exists
+    const userExists = await userModel.findOne({
+      userName: unfollowUserName,
+    });
+
+    if (!userExists) {
+      return res.status(404).json({ message: "User does not exist" });
+    }
+
+    // directly delete 
+    const unfollowRecord = await followerModel.findOneAndDelete({
+      followers: loggedInUserName,
+      followee: unfollowUserName,
+    });
+
+    if (!unfollowRecord) {
+      return res.status(400).json({ message: "Already unfollowed" });
+    }
+
+    res.status(200).json({
+      message: `${loggedInUserName} unfollowed ${unfollowUserName} successfully`,
+      unfollowRecord,
+    });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: "Failed to unfollow user" });
+  }
+};
+
+module.exports = { followDetailsController, unFollowDetailsController };
