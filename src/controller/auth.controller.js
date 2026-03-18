@@ -31,9 +31,13 @@ const registerController = async (req, res) => {
       password: hashedPassword,
     });
 
-    const token = jwt.sign({ id: registeredUser._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = jwt.sign(
+      { id: registeredUser._id, userName: registeredUser.userName },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d",
+      },
+    );
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
@@ -76,9 +80,13 @@ const loginController = async (req, res) => {
     return;
   }
 
-  const token = jwt.sign({ id: isUserExists._id }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
+  const token = jwt.sign(
+    { id: isUserExists._id, userName: userName },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    },
+  );
   res.cookie("token", token, {
     httpOnly: true,
     secure: true,
