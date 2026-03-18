@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 dotenv.config();
-const jwt = require("jsonwebtoken");
+
 const { ImageKit, toFile } = require("@imagekit/nodejs");
 const postModel = require("../model/post.model");
 
@@ -12,18 +12,7 @@ const imageKit = new ImageKit({
 
 const createPostController = async (req, res) => {
   try {
-    const token = req.cookies.token;
-
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-
-    let verifyUser;
-    try {
-      verifyUser = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return res.status(401).json({ message: "Unauthrozed Authentication" });
-    }
+    const verifiedUser = req.user; // from middlewhere
 
     const uploadedFile = await imageKit.files.upload({
       file: await toFile(req.file.buffer, req.file.originalname),
@@ -34,7 +23,7 @@ const createPostController = async (req, res) => {
     const post = await postModel.create({
       caption: req.body.caption,
       imgUrl: uploadedFile.url,
-      user: verifyUser.id,
+      user: verifiedUser.id,
     });
 
     res.status(201).json({ message: "Post Created Successfully", post });
@@ -49,18 +38,7 @@ const createPostController = async (req, res) => {
 
 const getVerifiedUserPostController = async (req, res) => {
   try {
-    const token = req.cookies.token;
-
-    if (!token) return res.status(401).json("Unauthorised access");
-
-    let verifiedUser;
-
-    try {
-      verifiedUser = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      console.log(error.message);
-      return res.status(401).json({ message: "Unauthorised Request" });
-    }
+    const verifiedUser = req.user; // from middlewhere
 
     const verifiedUserId = verifiedUser.id;
 
@@ -80,17 +58,7 @@ const getVerifiedUserPostController = async (req, res) => {
 
 const getSpecificPostDetailsProtectedController = async (req, res) => {
   try {
-    const token = req.cookies.token;
-
-    if (!token) return res.status(401).json({ message: "Unauthorized access" });
-
-    let verifyUser;
-
-    try {
-      verifyUser = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
+    let verifiedUser = req.user; // from middlewhere
 
     const postId = req.params.id;
 
@@ -98,7 +66,7 @@ const getSpecificPostDetailsProtectedController = async (req, res) => {
 
     if (!post) return res.status(404).json({ message: "Post Not Found" });
 
-    const matchedUserIdWithPost = post.user.toString() === verifyUser.id;
+    const matchedUserIdWithPost = post.user.toString() === verifiedUser.id;
 
     if (!matchedUserIdWithPost)
       return res.status(403).json({ message: "Forbidden! You're not allowed" });

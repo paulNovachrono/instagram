@@ -6,14 +6,24 @@ const {
   getVerifiedUserPostController,
   getSpecificPostDetailsProtectedController,
 } = require("../controller/post.controller");
+const identifyUser = require("../middleware/auth.middleware.js");
 const postRouter = express.Router();
 
 // in the middlewhere [upload.single('from-input-name')] should be there
-postRouter.post("/", upload.single("imgUrl"), createPostController);
+postRouter.post(
+  "/",
+  identifyUser,
+  upload.single("imgUrl"),
+  createPostController,
+);
 
-postRouter.get("/", getVerifiedUserPostController);
+postRouter.get("/", identifyUser, getVerifiedUserPostController);
 
 // specifi post
-postRouter.get("/details/:id", getSpecificPostDetailsProtectedController);
+postRouter.get(
+  "/details/:id",
+  identifyUser,
+  getSpecificPostDetailsProtectedController,
+);
 
 module.exports = postRouter;
