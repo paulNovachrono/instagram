@@ -8,8 +8,12 @@ const {
 } = require("../controller/post.controller");
 const identifyUser = require("../middleware/auth.middleware.js");
 const postRouter = express.Router();
-
-// in the middlewhere [upload.single('from-input-name')] should be there
+const { likePostController, dislikePostController } = require("../controller/like.controller.js");
+/* 
+@route POST api/posts/
+@description: Crete Post
+-in the middlewhere [upload.single('from-input-name')] should be there
+*/
 postRouter.post(
   "/",
   identifyUser,
@@ -17,13 +21,32 @@ postRouter.post(
   createPostController,
 );
 
-postRouter.get("/", identifyUser, getVerifiedUserPostController);
+/* 
+@route GET api/post/userallposts
+@description - to get all post info about a specifi user
+*/
+postRouter.get("/userallposts", identifyUser, getVerifiedUserPostController);
 
-// specifi post
+/* 
+@route GET api/posts/details/:id
+@description - Only the verified user will get their specific post detailsW
+*/
 postRouter.get(
   "/details/:id",
   identifyUser,
   getSpecificPostDetailsProtectedController,
 );
+
+/* 
+@route POST api/posts/like/:postid
+@description - user can like post [if loggedin]
+*/
+postRouter.post("/like/:postid", identifyUser, likePostController);
+
+/* 
+@route POST api/posts/dislike/:postid
+@description - user can dislike post [if liked and loggedin]
+*/
+postRouter.post("/dislike/:postid", identifyUser, dislikePostController);
 
 module.exports = postRouter;

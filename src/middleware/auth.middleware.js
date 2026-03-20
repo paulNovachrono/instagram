@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const userModel = require("../model/user.model");
 const identifyUser = async (req, res, next) => {
   const token = req.cookies.token;
 
@@ -13,8 +14,16 @@ const identifyUser = async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorised Request" });
   }
 
-  req.user = verifyUser;
+  const verifyUserDetails = await userModel.findById(verifyUser.id);
 
+  if (!verifyUserDetails) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  req.user = verifyUserDetails;
+
+  
+  
   next();
 };
 

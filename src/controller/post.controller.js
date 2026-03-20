@@ -14,6 +14,8 @@ const createPostController = async (req, res) => {
   try {
     const verifiedUser = req.user; // from middlewhere
 
+    if (!req.file) return res.status(404).json({ message: "File Not Found" });
+
     const uploadedFile = await imageKit.files.upload({
       file: await toFile(req.file.buffer, req.file.originalname),
       fileName: req.file.originalname,
@@ -23,7 +25,7 @@ const createPostController = async (req, res) => {
     const post = await postModel.create({
       caption: req.body.caption,
       imgUrl: uploadedFile.url,
-      user: verifiedUser.id,
+      user: verifiedUser._id,
     });
 
     res.status(201).json({ message: "Post Created Successfully", post });
@@ -40,7 +42,7 @@ const getVerifiedUserPostController = async (req, res) => {
   try {
     const verifiedUser = req.user; // from middlewhere
 
-    const verifiedUserId = verifiedUser.id;
+    const verifiedUserId = verifiedUser._id;
 
     try {
       const posts = await postModel.find({ user: verifiedUserId });
@@ -52,7 +54,7 @@ const getVerifiedUserPostController = async (req, res) => {
     }
   } catch (error) {
     console.log(error.message);
-    return res.status(500).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -66,7 +68,8 @@ const getSpecificPostDetailsProtectedController = async (req, res) => {
 
     if (!post) return res.status(404).json({ message: "Post Not Found" });
 
-    const matchedUserIdWithPost = post.user.toString() === verifiedUser.id;
+    const matchedUserIdWithPost =
+      post.user.toString() === verifiedUser._id.toString();
 
     if (!matchedUserIdWithPost)
       return res.status(403).json({ message: "Forbidden! You're not allowed" });
@@ -77,7 +80,7 @@ const getSpecificPostDetailsProtectedController = async (req, res) => {
   } catch (error) {
     console.log(error.message);
 
-    return res.status(500).json({
+    res.status(500).json({
       message: "Something went wrong",
     });
   }
