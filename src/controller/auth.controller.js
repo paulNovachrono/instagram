@@ -1,6 +1,16 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const userModel = require("../model/user.model");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+
+const { ImageKit, toFile } = require("@imagekit/nodejs");
+
+const imageKit = new ImageKit({
+  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+  privateKey: process.env["IMAGEKIT_PRIVATE_KEY"],
+  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
+});
 
 const registerController = async (req, res) => {
   const { userName, name, email, bio, profileImage, password } = req.body;
@@ -21,13 +31,21 @@ const registerController = async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  if (!req.file) return res.status(404).json({ message: "File Not Found" });
+
+  const uploadedFile = await imageKit.files.upload({
+    file: await toFile(req.file.buffer, req.file.originalname),
+    fileName: req.file.originalname,
+    folder: "insta-clone",
+  });
+
   try {
     const registeredUser = await userModel.create({
       userName,
       name,
       email,
       bio,
-      profileImage,
+      profileImage: uploadedFile.url,
       password: hashedPassword,
     });
 
