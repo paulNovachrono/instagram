@@ -13,7 +13,8 @@ const imageKit = new ImageKit({
 });
 
 const registerController = async (req, res) => {
-  const { userName, name, email, bio, profileImage, password } = req.body;
+  const { userName, name, email, bio, password } = req.body;
+  const file = req.file; // image will be there
 
   //   Checking if the user already exists by username or email
   const userExists = await userModel.findOne({
@@ -31,13 +32,16 @@ const registerController = async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  if (!req.file) return res.status(404).json({ message: "File Not Found" });
+  let imageUrl = "https://ik.imagekit.io/debajoytiCloude/default_avatar";
 
-  const uploadedFile = await imageKit.files.upload({
-    file: await toFile(req.file.buffer, req.file.originalname),
-    fileName: req.file.originalname,
-    folder: "insta-clone",
-  });
+  if (file) {
+    const uploadedFile = await imageKit.files.upload({
+      file: await toFile(req.file.buffer, req.file.originalname),
+      fileName: req.file.originalname,
+      folder: "insta-clone",
+    });
+    imageUrl = uploadedFile.url;
+  }
 
   try {
     const registeredUser = await userModel.create({
@@ -45,7 +49,7 @@ const registerController = async (req, res) => {
       name,
       email,
       bio,
-      profileImage: uploadedFile.url,
+      profileImage: imageUrl,
       password: hashedPassword,
     });
 
